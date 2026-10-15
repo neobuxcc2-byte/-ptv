@@ -1,0 +1,40 @@
+name: APK Derle
+
+on:
+  push:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Projeyi hazırla
+        run: |
+          if [ -f IPTVPlayer.zip ]; then unzip -oq IPTVPlayer.zip; fi
+          if [ -d IPTVPlayer ]; then echo "PROJ=IPTVPlayer" >> "$GITHUB_ENV"; else echo "PROJ=." >> "$GITHUB_ENV"; fi
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.7"
+
+      - name: APK derle
+        run: |
+          cd "$PROJ"
+          gradle assembleRelease --no-daemon
+
+      - name: APK'yı Releases'a koy
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: build-${{ github.run_number }}
+          name: IPTV Player ${{ github.run_number }}
+          files: ${{ env.PROJ }}/app/build/outputs/apk/release/app-release.apk
